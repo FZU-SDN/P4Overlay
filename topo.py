@@ -29,6 +29,7 @@ from mininet.net import Mininet, VERSION
 from mininet.topo import Topo
 from mininet.log import setLogLevel, info
 from mininet.cli import CLI
+from mininet.node import OVSController
 
 from p4_mininet import P4Switch, P4Host
 
@@ -40,7 +41,10 @@ import subprocess
 _THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 _THRIFT_BASE_PORT = 22222
 
+# Parsing Arguments
+
 parser = argparse.ArgumentParser(description='Mininet demo')
+
 parser.add_argument('--behavioral-exe', help='Path to behavioral executable',
                     type=str, action="store", required=True)
 parser.add_argument('--json', help='Path to JSON config file',
@@ -52,8 +56,15 @@ parser.add_argument('--mode', choices=['l2', 'l3'], type=str, default='l3')
 args = parser.parse_args()
 
 # OvS Connections: host <--> ovsSwicth
+
+# The hosts that connect to ovs1 or ovs2:
 ovs1_host, ovs2_host = [], []
+
+# Edge P4 Switches:
 egsw = []
+
+# Hosts:
+hosts = []
 
 class MyTopo(Topo):
     def __init__(self, sw_path, json_path, nb_hosts, nb_switches, links, nb_links, **opts):
@@ -74,8 +85,8 @@ class MyTopo(Topo):
            swes.append(sw)
 
         for h in xrange(nb_hosts):
-            hi = self.addHost('h%d' % (h + 1), ip="10.0.0.%d" % (h + 1),
-            mac="00:00:00:00:00:0%d" % (h+1))
+            hi = self.addHost('h%d' % (h+1)) 
+            hosts.append(hi)
             if h < nb_hosts/2:
                 ovs1_host.append(hi)
             else:
@@ -85,7 +96,15 @@ class MyTopo(Topo):
         for i, j in links:
             self.addLink(swes[i-1], swes[j-1], port1=port, port2=port)
             port = port+1
-        
+
+def HostConfig(net, nb_hosts):
+    # Config the hosts by IP and MAC address
+    for i in xrange(nb_hosts):
+        print 'Config hosts h%d' % (i+1)
+        obj = net.get(hosts[i])
+        obj.setIP("10.0.0.%d" % (i+1))
+        obj.setMAC("00:00:00:00:00:0%d" % (i+1))
+
 def Connect(net, nb_hosts, nb_links):
     # Connect the overlay network to OvS network
     ovs1 = net.addSwitch('ovs1')
@@ -137,14 +156,18 @@ def main():
                   nb_hosts, nb_switches, links, nb_links)
 
     net = Mininet(topo = topo,
-                  # host = P4Host,
-                  # switch = P4Switch,
-                  controller = None)
+                  controller = OVSController)
+    
     # Connect the overlay network to the OvS switches at edge.
     Connect(net, nb_hosts, nb_links)
+    
+    # Config the hosts    
+    print 'Config the hosts...\n'
+    HostConfig(net, nb_hosts)    
+    print '\nFinished, start the network...\n'
 
     net.start()
-
+    
     for n in xrange(nb_hosts):
         h = net.get('h%d' % (n + 1))
         
