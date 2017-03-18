@@ -1,0 +1,6 @@
+switches 4
+hosts 6
+1 2
+2 4
+1 3
+3 4
