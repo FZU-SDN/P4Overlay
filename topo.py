@@ -83,7 +83,6 @@ class MyTopo(Topo):
         
         port = 1
         for i, j in links:
-            print i, j
             self.addLink(swes[i-1], swes[j-1], port1=port, port2=port)
             port = port+1
         
