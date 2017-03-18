@@ -29,7 +29,7 @@ from mininet.net import Mininet, VERSION
 from mininet.topo import Topo
 from mininet.log import setLogLevel, info
 from mininet.cli import CLI
-from mininet.node import OVSController
+from mininet.node import OVSController, RemoteController
 
 from p4_mininet import P4Switch, P4Host
 
@@ -166,6 +166,11 @@ def main():
     HostConfig(net, nb_hosts)    
     print '\nFinished, start the network...\n'
 
+    # Connect to RemoteController
+    # Controller_IP = '192.168.249.145'
+    # Controller_port = 6633
+    # net.addController('c0', controller=RemoteController,
+    # ip = Controller_IP, port=Controller_port)
     net.start()
     
     for n in xrange(nb_hosts):
